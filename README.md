@@ -2,6 +2,9 @@
 
 Sistem pemantauan kekeruhan **air sungai** berbasis IoT. Sensor turbidity **DFRobot SEN0189** dibaca oleh **ESP32**, datanya dikirim ke **Supabase** lewat REST API, lalu ditampilkan pada dashboard web **Next.js** beserta indikator kualitas yang mengacu pada baku mutu air sungai nasional.
 
+# LINK SIMULASI DI CIRKIT
+[Link Proyek Cirkit Designer untuk Menyalakan Sistem IoT](https://app.cirkitdesigner.com/project/f5d04dca-2dd0-4f37-8c0a-73e41adf95b4)
+
 ## Daftar isi
 
 - [Arsitektur](#arsitektur)
@@ -19,7 +22,7 @@ Sistem pemantauan kekeruhan **air sungai** berbasis IoT. Sensor turbidity **DFRo
 
 ## Arsitektur
 
-![Arsitektur River Guard](C:\Users\bbros\Downloads\turbidity_twin\mytoren\public\arsitektur.svg)
+![Arsitektur River Guard](docs/arsitektur.svg)
 
 Alur singkat:
 
