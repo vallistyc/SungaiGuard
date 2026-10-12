@@ -3,23 +3,40 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const NTU_CLEAR = 3;
-const NTU_CLOUDY = 25;
 const POLL_MS = 3000;
 const OFFLINE_MS = 30000;
-const COLORS: Record<string, string> = {
-  Jernih: "#26c5a3",
-  "Agak Keruh": "#f2b84b",
-  Keruh: "#fa806e",
+
+// Estimasi TSS: TSS (mg/L) = TSS_A * NTU + TSS_B. Samakan dengan firmware (placeholder simulasi).
+const TSS_A: number = 1.0;
+const TSS_B: number = 0.0;
+const TSS_LIMITS = { k1: 40, k2: 50, k3: 100, k4: 400 } as const;
+
+type Kelas = "Kelas I" | "Kelas II" | "Kelas III" | "Kelas IV" | "Melampaui";
+
+const COLORS: Record<Kelas, string> = {
+  "Kelas I": "#26c5a3",
+  "Kelas II": "#8fd14f",
+  "Kelas III": "#f2b84b",
+  "Kelas IV": "#f28c4b",
+  Melampaui: "#fa6e5e",
+};
+
+const HERO_MESSAGE: Record<Kelas, string> = {
+  "Kelas I": "Estimasi TSS berada dalam batas Kelas I.",
+  "Kelas II": "Estimasi TSS berada dalam batas Kelas II.",
+  "Kelas III": "Estimasi TSS berada dalam batas Kelas III. Pantau secara berkala.",
+  "Kelas IV": "Estimasi TSS berada dalam batas Kelas IV. Perlu perhatian.",
+  Melampaui: "Estimasi TSS melampaui batas Kelas IV. Perlu pemeriksaan.",
 };
 
 type Reading = {
   id: string;
   created_at: string;
   ntu: number;
+  tss: number;
   adc_raw: number;
   voltage: number;
-  status: string;
+  status: Kelas;
 };
 
 type Range = "1H" | "6H" | "24H" | "7D";
@@ -38,10 +55,20 @@ const RANGE_LABEL: Record<Range, string> = {
   "7D": "7 hari terakhir",
 };
 
-function getStatus(ntu: number) {
-  if (ntu <= NTU_CLEAR) return "Jernih";
-  if (ntu <= NTU_CLOUDY) return "Agak Keruh";
-  return "Keruh";
+function toTSS(ntu: number): number {
+  return Math.max(0, TSS_A * ntu + TSS_B);
+}
+
+function tssToNtu(tss: number): number {
+  return TSS_A === 0 ? 0 : (tss - TSS_B) / TSS_A;
+}
+
+function getKelas(tss: number): Kelas {
+  if (tss <= TSS_LIMITS.k1) return "Kelas I";
+  if (tss <= TSS_LIMITS.k2) return "Kelas II";
+  if (tss <= TSS_LIMITS.k3) return "Kelas III";
+  if (tss <= TSS_LIMITS.k4) return "Kelas IV";
+  return "Melampaui";
 }
 
 function parseRows(payload: unknown): Reading[] {
@@ -65,6 +92,7 @@ function parseRows(payload: unknown): Reading[] {
       return [];
     }
 
+    const tss = toTSS(ntu);
     return [
       {
         id:
@@ -73,9 +101,10 @@ function parseRows(payload: unknown): Reading[] {
             : `${row.created_at}-${index}`,
         created_at: row.created_at,
         ntu,
+        tss,
         adc_raw: adc,
         voltage,
-        status: getStatus(ntu),
+        status: getKelas(tss),
       },
     ];
   });
@@ -83,22 +112,66 @@ function parseRows(payload: unknown): Reading[] {
 
 function makeDemoReadings(): Reading[] {
   const now = Date.now();
-  return Array.from({ length: 36 }, (_, index) => {
+  const chronologicalReadings = Array.from({ length: 36 }, (_, index) => {
     const elapsed = (35 - index) * 40 * 60 * 1000;
-    const wave = Math.sin(index * 0.66) * 1.7 + Math.cos(index * 0.23) * 1.1;
-    const ntu = Math.max(
-      0.8,
-      Number((4.8 + wave + (index > 25 ? 1.2 : 0)).toFixed(1)),
-    );
+    const wave = Math.sin(index * 0.66) * 8 + Math.cos(index * 0.23) * 6;
+    const surgeValues: Record<number, number> = {
+      5: 45,
+      12: 80,
+      19: 200,
+      25: 350,
+      28: 450,
+      33: 120,
+      34: 125,
+      35: 130,
+    };
+    const ntu = surgeValues[index] ?? Math.max(20, 36 + wave);
+    const tss = toTSS(ntu);
+    const voltage = Math.max(0, (3.9994 - 0.0008 * ntu) * 0.6);
+
     return {
       id: `demo-${index}`,
       created_at: new Date(now - elapsed).toISOString(),
       ntu,
-      adc_raw: Math.round(1830 - ntu * 17 + Math.sin(index) * 16),
-      voltage: Number((3.3 - ntu * 0.028).toFixed(2)),
-      status: getStatus(ntu),
+      tss,
+      adc_raw: Math.round((voltage / 3.3) * 4095),
+      voltage,
+      status: getKelas(tss),
     };
   });
+
+  return chronologicalReadings.reverse();
+}
+
+const EVENT_MIN_BASELINE_POINTS = 10;
+const EVENT_CONSECUTIVE = 3;
+const EVENT_DELTA_NTU = 8;
+const EVENT_BACKGROUND_SPLIT = 80;
+const EVENT_RATIO_HIGH = 1.1;
+
+function detectSurge(readingsDesc: Reading[]) {
+  if (
+    readingsDesc.length <
+    EVENT_MIN_BASELINE_POINTS + EVENT_CONSECUTIVE
+  ) {
+    return null;
+  }
+
+  const recent = readingsDesc.slice(0, EVENT_CONSECUTIVE);
+  const base = readingsDesc
+    .slice(EVENT_CONSECUTIVE)
+    .map((reading) => reading.ntu)
+    .sort((a, b) => a - b);
+  const mid = Math.floor(base.length / 2);
+  const baseline =
+    base.length % 2 ? base[mid] : (base[mid - 1] + base[mid]) / 2;
+  const limit =
+    baseline <= EVENT_BACKGROUND_SPLIT
+      ? baseline + EVENT_DELTA_NTU
+      : baseline * EVENT_RATIO_HIGH;
+  const surge = recent.every((reading) => reading.ntu > limit);
+
+  return surge ? { baseline, current: recent[0].ntu, limit } : null;
 }
 
 function formatTime(value: string, includeDate = false) {
@@ -244,202 +317,64 @@ function Icon({
   return <svg {...common}>{paths[name]}</svg>;
 }
 
-function DigitalTwinTank({ status }: { status: string }) {
-  const waterColors: Record<string, [string, string]> = {
-    Jernih: ["#8ff0d7", "#18a984"],
-    "Agak Keruh": ["#ffe19a", "#d69a22"],
-    Keruh: ["#ffb19a", "#e45f4a"],
+function RiverVisual({ status }: { status: Kelas }) {
+  const waterColors: Record<Kelas, [string, string]> = {
+    "Kelas I": ["#79d8c5", "#167b83"],
+    "Kelas II": ["#b5d987", "#4e8f68"],
+    "Kelas III": ["#f1d17d", "#9a8d50"],
+    "Kelas IV": ["#e9ae79", "#9c6649"],
+    Melampaui: ["#e99d82", "#9f574e"],
   };
-  const [waterHighlight, waterShadow] =
-    waterColors[status] ?? waterColors.Jernih;
+  const [waterHighlight, waterShadow] = waterColors[status];
 
   return (
     <div
-      className="tank-visual"
+      className="river-visual"
       role="img"
-      aria-label={`Toren digital twin, status kualitas air ${status}`}
+      aria-label={`Ilustrasi sungai, estimasi kelas ${status}`}
     >
-      <svg viewBox="0 0 240 250" fill="none" aria-hidden="true">
+      <svg viewBox="0 0 360 250" fill="none" aria-hidden="true">
         <defs>
-          <linearGradient
-            id="tank-shell"
-            x1="50"
-            y1="80"
-            x2="190"
-            y2="155"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#DDF3EF" />
-            <stop offset=".2" stopColor="#9BCFC4" />
-            <stop offset=".48" stopColor="#6BA99E" />
-            <stop offset=".8" stopColor="#47877D" />
-            <stop offset="1" stopColor="#32695F" />
+          <linearGradient id="river-sky" x1="180" y1="0" x2="180" y2="145" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#D4F0E8" />
+            <stop offset="1" stopColor="#86CBB9" />
           </linearGradient>
-          <linearGradient
-            id="tank-lid"
-            x1="70"
-            y1="40"
-            x2="169"
-            y2="73"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#EFFBF8" />
-            <stop offset=".5" stopColor="#A8D9D0" />
-            <stop offset="1" stopColor="#5F9A90" />
-          </linearGradient>
-          <linearGradient
-            id="tank-liquid"
-            x1="77"
-            y1="115"
-            x2="163"
-            y2="190"
-            gradientUnits="userSpaceOnUse"
-          >
+          <linearGradient id="river-water" x1="100" y1="105" x2="246" y2="250" gradientUnits="userSpaceOnUse">
             <stop stopColor={waterHighlight} />
             <stop offset="1" stopColor={waterShadow} />
           </linearGradient>
-          <linearGradient
-            id="tank-glass"
-            x1="78"
-            y1="100"
-            x2="162"
-            y2="183"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stopColor="#E9FFFA" stopOpacity=".48" />
-            <stop offset=".48" stopColor="#B6EAE0" stopOpacity=".13" />
-            <stop offset="1" stopColor="#143D3A" stopOpacity=".4" />
+          <linearGradient id="river-bank" x1="0" y1="80" x2="180" y2="200" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#85B99A" />
+            <stop offset="1" stopColor="#326F62" />
           </linearGradient>
-          <clipPath id="tank-window-clip">
-            <rect x="78" y="96" width="84" height="91" rx="17" />
+          <clipPath id="river-water-clip">
+            <path d="M151 91C174 92 203 103 210 120c9 21-12 34-32 51-23 20-5 45 54 79H115c-39-37-53-59-20-82 30-21 55-35 43-53-9-13-2-22 13-24Z" />
           </clipPath>
         </defs>
-        <ellipse
-          cx="120"
-          cy="224"
-          rx="74"
-          ry="10"
-          fill="#071F1D"
-          fillOpacity=".34"
-        />
-        <path
-          d="M169 54V38c0-6 5-11 11-11h12"
-          stroke="#77B2A6"
-          strokeWidth="8"
-          strokeLinecap="round"
-        />
-        <path
-          d="M169 54V38c0-6 5-11 11-11h12"
-          stroke="#D0EEE7"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M113 33V22c0-5 4-9 9-9h14"
-          stroke="#79B2A7"
-          strokeWidth="8"
-          strokeLinecap="round"
-        />
-        <path
-          d="M113 33V22c0-5 4-9 9-9h14"
-          stroke="#D7F1EB"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <path
-          d="M55 65c0-13 29-23 65-23s65 10 65 23v137c0 13-29 23-65 23s-65-10-65-23V65Z"
-          fill="url(#tank-shell)"
-          stroke="#C4E7DF"
-          strokeOpacity=".8"
-          strokeWidth="2"
-        />
-        <path
-          d="M164 53c13 4 21 8 21 13v137c0 10-15 18-37 21V62c0-4 6-7 16-9Z"
-          fill="#164D46"
-          fillOpacity=".18"
-        />
-        <path
-          d="M57 81c0 10 28 18 63 18s63-8 63-18M57 113c0 10 28 18 63 18s63-8 63-18M57 177c0 10 28 18 63 18s63-8 63-18M57 204c0 10 28 18 63 18s63-8 63-18"
-          stroke="#E2F8F3"
-          strokeOpacity=".3"
-          strokeWidth="2"
-        />
-        <g clipPath="url(#tank-window-clip)">
-          <rect
-            x="78"
-            y="96"
-            width="84"
-            height="91"
-            fill="#123F3C"
-            fillOpacity=".52"
-          />
-          <path
-            d="M78 128c13-5 23 4 36 0s21-4 34 0 10 0 14-2v61H78v-59Z"
-            fill="url(#tank-liquid)"
-          />
-          <path
-            d="M78 128c13-5 23 4 36 0s21-4 34 0 10 0 14-2"
-            stroke={waterHighlight}
-            strokeWidth="2.5"
-          />
-          <path
-            d="M89 142v35M151 140v38"
-            stroke="white"
-            strokeOpacity=".16"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <circle cx="105" cy="151" r="2.3" fill="white" fillOpacity=".63" />
-          <circle cx="133" cy="162" r="1.7" fill="white" fillOpacity=".55" />
-          <circle cx="119" cy="145" r="1.4" fill="white" fillOpacity=".55" />
-          <path d="M78 96h84v91H78z" fill="url(#tank-glass)" />
+        <rect width="360" height="250" rx="18" fill="url(#river-sky)" />
+        <circle cx="295" cy="39" r="18" fill="#FFF1C2" fillOpacity=".8" />
+        <path d="M0 105 54 57l38 31 48-55 56 62 44-41 66 54v47H0v-50Z" fill="#77AD98" fillOpacity=".72" />
+        <path d="m0 118 52-35 43 29 51-42 48 48 51-33 62 45v31H0v-43Z" fill="#4D8D79" fillOpacity=".68" />
+        <path d="M0 132c47-21 74-25 111-23 15 1 27 3 40 7-13 13-29 26-56 44-33 23-17 48 20 90H0V132Z" fill="url(#river-bank)" />
+        <path d="M210 116c45-17 91-13 150 9v125H232c-59-34-77-59-54-79 20-17 41-30 32-55Z" fill="url(#river-bank)" />
+        <path d="M151 91C174 92 203 103 210 120c9 21-12 34-32 51-23 20-5 45 54 79H115c-39-37-53-59-20-82 30-21 55-35 43-53-9-13-2-22 13-24Z" fill="url(#river-water)" />
+        <g clipPath="url(#river-water-clip)">
+          <path d="M129 119c24 9 54 10 80 4M105 151c30 10 62 9 94-2M99 187c34 9 73 8 105-4M125 221c34 8 64 7 96-1" stroke="#E9FFF7" strokeOpacity=".36" strokeWidth="2" strokeLinecap="round" />
+          <path d="M143 133c17 5 37 5 52 1M112 171c19 4 38 4 54 1M139 205c18 4 35 3 49 0" stroke="#E9FFF7" strokeOpacity=".2" strokeWidth="1.4" strokeLinecap="round" />
+          <circle cx="156" cy="157" r="2" fill="white" fillOpacity=".55" />
+          <circle cx="188" cy="190" r="1.6" fill="white" fillOpacity=".52" />
+          <circle cx="149" cy="211" r="1.4" fill="white" fillOpacity=".46" />
         </g>
-        <rect
-          x="78"
-          y="96"
-          width="84"
-          height="91"
-          rx="17"
-          stroke="#ECFFFA"
-          strokeOpacity=".72"
-          strokeWidth="2.5"
-        />
-        <path
-          d="M86 102h67M86 181h67"
-          stroke="white"
-          strokeOpacity=".2"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M64 63c0-9 25-17 56-17s56 8 56 17-25 17-56 17-56-8-56-17Z"
-          fill="url(#tank-lid)"
-          stroke="#E5F9F4"
-          strokeWidth="2"
-        />
-        <path
-          d="M91 62c4-5 15-8 29-8s25 3 29 8"
-          stroke="white"
-          strokeOpacity=".55"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M105 46v-6c0-4 7-7 15-7s15 3 15 7v6"
-          fill="#76AFA3"
-          stroke="#D6F1EA"
-          strokeWidth="2"
-        />
-        <path
-          d="M84 224v6m72-6v6"
-          stroke="#BCDCD4"
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
+        <path d="M0 132c47-21 74-25 111-23M210 116c45-17 91-13 150 9" stroke="#D3E8B1" strokeOpacity=".72" strokeWidth="2" />
+        <path d="M260 77v53m0-53-15 7m15-7 15 7" stroke="#E6F5E8" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M242 79h36l-5-13h-26l-5 13Z" fill="#244E4B" stroke="#E6F5E8" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M252 130c0-5 4-9 9-9s9 4 9 9v6h-18v-6Z" fill="#D7ECE1" stroke="#477F72" strokeWidth="2" />
+        <circle cx="261" cy="132" r="3" fill={waterHighlight} />
+        <path d="M32 151v-17m0 9-8-7m8 10 8-8m256 10v-19m0 10-8-8m8 12 9-9m21 12v-15m0 7-7-6" stroke="#C5DEAA" strokeWidth="3" strokeLinecap="round" />
+        <path d="M17 250c25-16 47-19 75-17m216 17c15-10 32-14 52-13" stroke="#B6D7A4" strokeOpacity=".65" strokeWidth="2" />
       </svg>
-      <div className="tank-state">
-        <i
-          style={{ backgroundColor: COLORS[status] ?? COLORS[getStatus(0)] }}
-        />
+      <div className="river-state">
+        <i style={{ backgroundColor: COLORS[status] }} />
         Kualitas air · {status}
       </div>
     </div>
@@ -449,36 +384,73 @@ function DigitalTwinTank({ status }: { status: string }) {
 function TrendChart({
   readings,
   range,
+  logScale,
 }: {
   readings: Reading[];
   range: Range;
+  logScale: boolean;
 }) {
   const width = 760;
   const height = 236;
-  const maximum = Math.max(30, ...readings.map((reading) => reading.ntu));
+  const maximum = Math.max(60, ...readings.map((reading) => reading.ntu));
   const padding = {
     top: 18,
-    right: 14,
+    right: 62,
     bottom: 28,
     left: maximum >= 1000 ? 48 : 38,
   };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
-  const ticks = [0, 1, 2, 3].map((index) =>
-    Math.round((maximum / 3) * index),
-  );
+  const ticks = logScale
+    ? [0, 10, 100, 1000].filter((value) => value <= maximum)
+    : [0, 1, 2, 3].map((index) => Math.round((maximum / 3) * index));
+  const chartY = (value: number) =>
+    padding.top +
+    chartHeight -
+    (logScale
+      ? (Math.log10(1 + value) / Math.log10(1 + maximum)) * chartHeight
+      : (value / maximum) * chartHeight);
+  const thresholdLines: Array<{
+    value: number;
+    status: Kelas;
+    label: string;
+  }> = [
+    { value: TSS_LIMITS.k1, status: "Kelas I", label: "Kelas I" },
+    { value: TSS_LIMITS.k2, status: "Kelas II", label: "Kelas II" },
+    { value: TSS_LIMITS.k3, status: "Kelas III", label: "Kelas III" },
+    { value: TSS_LIMITS.k4, status: "Kelas IV", label: "Kelas IV" },
+  ];
   const points = readings.map((reading, index) => {
     const x =
       readings.length < 2
         ? width / 2
         : padding.left + (index / (readings.length - 1)) * chartWidth;
-    const y = padding.top + chartHeight - (reading.ntu / maximum) * chartHeight;
+    const y = chartY(reading.ntu);
     return { x, y, reading };
   });
   const line = points.map(({ x, y }) => `${x},${y}`).join(" ");
   const area = `${padding.left},${padding.top + chartHeight} ${line} ${padding.left + chartWidth},${padding.top + chartHeight}`;
-  const thresholdY = (value: number) =>
-    padding.top + chartHeight - (value / maximum) * chartHeight;
+  const visibleThresholds = thresholdLines
+    .map((threshold) => ({ ...threshold, y: chartY(tssToNtu(threshold.value)) }))
+    .filter((threshold) => tssToNtu(threshold.value) <= maximum)
+    .sort((a, b) => a.y - b.y);
+  const annotatedThresholds = visibleThresholds.reduce<
+    Array<(typeof visibleThresholds)[number] & { labelY: number }>
+  >((annotations, threshold) => {
+    const previousLabelY =
+      annotations[annotations.length - 1]?.labelY ??
+      Number.NEGATIVE_INFINITY;
+    const labelY = Math.max(threshold.y + 3, previousLabelY + 11);
+    return [...annotations, { ...threshold, labelY }];
+  }, []);
+  const labelOverflow =
+    annotatedThresholds.length > 0
+      ? Math.max(
+          0,
+          annotatedThresholds[annotatedThresholds.length - 1].labelY -
+            (padding.top + chartHeight - 2),
+        )
+      : 0;
   const labels =
     readings.length > 0
       ? [
@@ -499,7 +471,7 @@ function TrendChart({
           className="trend-chart"
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label={`Grafik kekeruhan ${range} terakhir`}
+          aria-label={`Grafik kekeruhan ${range} terakhir dengan skala ${logScale ? "logaritmik" : "linear"}`}
         >
           <defs>
             <linearGradient id="chart-area" x1="0" y1="0" x2="0" y2="1">
@@ -508,7 +480,7 @@ function TrendChart({
             </linearGradient>
           </defs>
           {ticks.map((value) => {
-            const y = thresholdY(value);
+            const y = chartY(value);
             return (
               <g key={value}>
                 <line
@@ -524,22 +496,26 @@ function TrendChart({
               </g>
             );
           })}
-          <line
-            x1={padding.left}
-            x2={width - padding.right}
-            y1={thresholdY(NTU_CLEAR)}
-            y2={thresholdY(NTU_CLEAR)}
-            className="chart-threshold"
-          />
-          {maximum > NTU_CLOUDY && (
-            <line
-              x1={padding.left}
-              x2={width - padding.right}
-              y1={thresholdY(NTU_CLOUDY)}
-              y2={thresholdY(NTU_CLOUDY)}
-              className="chart-threshold chart-threshold-high"
-            />
-          )}
+          {annotatedThresholds.map((threshold) => (
+            <g key={threshold.status}>
+              <line
+                x1={padding.left}
+                x2={width - padding.right}
+                y1={threshold.y}
+                y2={threshold.y}
+                className="chart-threshold"
+                stroke={COLORS[threshold.status]}
+              />
+              <text
+                x={width - padding.right + 5}
+                y={threshold.labelY - labelOverflow}
+                className="chart-threshold-label"
+                fill={COLORS[threshold.status]}
+              >
+                {threshold.label}
+              </text>
+            </g>
+          ))}
           <polygon points={area} fill="url(#chart-area)" />
           <polyline points={line} className="chart-line" />
           {points.length > 0 && (
@@ -591,6 +567,7 @@ export default function Home() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [now, setNow] = useState(0);
+  const [logScale, setLogScale] = useState(false);
   const requestId = useRef(0);
 
   const loadReadings = useCallback(async () => {
@@ -668,6 +645,7 @@ export default function Home() {
   }, [loadReadings]);
 
   const latest = latestReading ?? readings[0];
+  const surge = useMemo(() => detectSurge(readings), [readings]);
   const deviceOnline = latest
     ? now - new Date(latest.created_at).getTime() <= OFFLINE_MS
     : false;
@@ -681,23 +659,36 @@ export default function Home() {
     ? readings.reduce((total, reading) => total + reading.ntu, 0) /
       readings.length
     : 0;
-  const clearPercentage = readings.length
+  const maximumReading = readings.length
+    ? Math.max(...readings.map((reading) => reading.ntu))
+    : 0;
+  const classIIPercentage = readings.length
     ? Math.round(
-        (readings.filter((reading) => reading.ntu <= NTU_CLEAR).length /
+        (readings.filter((reading) => reading.tss <= TSS_LIMITS.k2).length /
           readings.length) *
           100,
       )
     : 0;
-  const statusColor = latest
-    ? (COLORS[latest.status] ?? COLORS[getStatus(latest.ntu)])
-    : COLORS.Jernih;
+  const statusColor = latest ? COLORS[latest.status] : COLORS["Kelas I"];
+  const greetingHour = now ? new Date(now).getHours() : null;
+  const greeting =
+    greetingHour === null
+      ? "Selamat datang"
+      : greetingHour < 11
+        ? "Selamat pagi"
+        : greetingHour < 15
+          ? "Selamat siang"
+          : greetingHour < 18
+            ? "Selamat sore"
+            : "Selamat malam";
 
   function exportCsv() {
     const rows = [
-      ["Waktu", "NTU", "ADC", "Tegangan", "Status"],
+      ["Waktu", "NTU", "TSS Estimasi (mg/L)", "ADC", "Tegangan", "Kelas"],
       ...readings.map((reading) => [
         reading.created_at,
         reading.ntu,
+        reading.tss,
         reading.adc_raw,
         reading.voltage,
         reading.status,
@@ -712,7 +703,7 @@ export default function Home() {
     link.href = URL.createObjectURL(
       new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }),
     );
-    link.download = `toren-guard-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `river-guard-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
   }
@@ -725,14 +716,14 @@ export default function Home() {
             <a
               className="brand"
               href="#overview"
-              aria-label="Toren Guard beranda"
+              aria-label="River Guard beranda"
             >
               <span className="brand-mark">
                 <Icon name="droplet" size={21} />
               </span>
               <span className="brand-copy">
                 <strong>
-                  toren<span>guard</span>
+                  river<span>guard</span>
                 </strong>
                 <small>WATER MONITORING</small>
               </span>
@@ -803,16 +794,26 @@ export default function Home() {
               <button onClick={loadReadings}>Coba lagi</button>
             </div>
           )}
+          {surge && (
+            <div className="event-banner" role="alert">
+              <Icon name="warning" size={17} />
+              <span>
+                <strong>Kenaikan kekeruhan mendadak.</strong> Saat ini{" "}
+                {surge.current.toFixed(1)} NTU, kondisi dasar sekitar{" "}
+                {surge.baseline.toFixed(1)} NTU.
+              </span>
+            </div>
+          )}
 
           <div className="page-heading">
             <div>
               <div className="eyebrow">
-                <span className="eyebrow-line" /> SISTEM PEMANTAUAN AIR
+                <span className="eyebrow-line" /> SISTEM PEMANTAUAN SUNGAI
               </div>
               <h1>
-                Selamat pagi <span className="wave">✦</span>
+                {greeting} <span className="wave">✦</span>
               </h1>
-              <p>Berikut kondisi air toren Anda saat ini.</p>
+              <p>Berikut kondisi air sungai saat ini.</p>
             </div>
             <div className="heading-actions">
               <span className="updated-at">
@@ -840,17 +841,15 @@ export default function Home() {
           <section className="hero-card" id="quality">
             <div className="hero-text">
               <div className="hero-kicker">
-                <span className="pulse-dot" /> KONDISI AIR SAAT INI
+                <span className="pulse-dot" /> KONDISI SUNGAI SAAT INI
               </div>
-              <h2>{latest?.status ?? "Menunggu data"}</h2>
+              <h2 style={{ color: statusColor }}>
+                {latest?.status ?? "Menunggu data"}
+              </h2>
               <p>
-                {latest?.status === "Jernih"
-                  ? "Kualitas air dalam kondisi baik dan jernih."
-                  : latest?.status === "Keruh"
-                    ? "Perlu perhatian — kekeruhan melewati ambang batas."
-                    : latest
-                      ? "Air sedikit keruh. Tetap pantau kualitasnya."
-                      : "Pembacaan terbaru akan muncul di sini."}
+                {latest
+                  ? HERO_MESSAGE[latest.status]
+                  : "Pembacaan terbaru akan muncul di sini."}
               </p>
               <div className="hero-metrics">
                 <div>
@@ -878,12 +877,15 @@ export default function Home() {
               </div>
             </div>
             <div className="hero-visual">
-              <DigitalTwinTank status={latest?.status ?? "Jernih"} />
+              <RiverVisual status={latest?.status ?? "Kelas I"} />
               <div className="hero-reading">
                 <div className="reading-label">TINGKAT KEKERUHAN</div>
                 <div className="ntu-value">
                   {latest ? latest.ntu.toFixed(1) : "—"}
                   <span>NTU</span>
+                </div>
+                <div className="tss-estimate">
+                  Estimasi TSS: {latest ? latest.tss.toFixed(1) : "—"} mg/L
                 </div>
                 <div className="reading-scale">
                   <span>0</span>
@@ -891,36 +893,45 @@ export default function Home() {
                     <div
                       className="scale-fill"
                       style={{
-                        width: `${Math.min(100, ((latest?.ntu ?? 0) / 40) * 100)}%`,
+                        width: `${Math.min(100, ((latest?.tss ?? 0) / 500) * 100)}%`,
                         background: statusColor,
                       }}
                     />
-                    <i className="scale-tick tick-one" />
-                    <i className="scale-tick tick-two" />
+                    <i className="scale-tick" style={{ left: "20%" }} />
+                    <i className="scale-tick" style={{ left: "80%" }} />
                   </div>
-                  <span>40+</span>
+                  <span>500+</span>
                 </div>
                 <div className="scale-legend">
                   <span>
-                    <i className="legend-dot clear" />
-                    Jernih &lt; 3
+                    <i
+                      className="legend-dot"
+                      style={{ backgroundColor: COLORS["Kelas I"] }}
+                    />
+                    Kelas I ≤ 40 mg/L
                   </span>
                   <span>
-                    <i className="legend-dot murky" />
-                    Keruh &gt; 25
+                    <i
+                      className="legend-dot"
+                      style={{ backgroundColor: COLORS.Melampaui }}
+                    />
+                    Melampaui &gt; 400 mg/L
                   </span>
                 </div>
               </div>
             </div>
             <div className="hero-bottom-note">
-              <Icon name="check" size={14} /> Standar kualitas air rumah tangga
+              <Icon name="check" size={14} /> Indikator mengacu PP 22/2021 (TSS)
             </div>
           </section>
 
           <section className="stat-grid" aria-label="Statistik kualitas air">
             <article className="stat-card">
               <div className="stat-top">
-                <span className="stat-icon turquoise">
+                <span
+                  className="stat-icon turquoise"
+                  style={{ color: statusColor, backgroundColor: `${statusColor}18` }}
+                >
                   <Icon name="activity" />
                 </span>
                 <span className="stat-caption">PEMBACAAN TERAKHIR</span>
@@ -937,7 +948,9 @@ export default function Home() {
                   <i />
                   {latest?.status ?? "Belum tersedia"}
                 </span>
-                <span className="stat-muted">dari sensor</span>
+                <span className="stat-muted">
+                  TSS ≈ {latest ? latest.tss.toFixed(1) : "—"} mg/L
+                </span>
               </div>
             </article>
             <article className="stat-card">
@@ -955,7 +968,9 @@ export default function Home() {
                 <span className="stat-neutral">
                   <Icon name="clock" size={13} /> {RANGE_LABEL[range]}
                 </span>
-                <span className="stat-muted">{readings.length} data</span>
+                <span className="stat-muted">
+                  Puncak {maximumReading.toFixed(1)} NTU
+                </span>
               </div>
             </article>
             <article className="stat-card">
@@ -963,16 +978,16 @@ export default function Home() {
                 <span className="stat-icon green">
                   <Icon name="check" />
                 </span>
-                <span className="stat-caption">KONDISI JERNIH</span>
+                <span className="stat-caption">MEMENUHI KELAS II</span>
                 <span className="stat-more">···</span>
               </div>
               <div className="stat-value">
-                {readings.length ? clearPercentage : 0}
+                {readings.length ? classIIPercentage : 0}
                 <small>%</small>
               </div>
               <div className="stat-foot">
                 <div className="mini-progress">
-                  <span style={{ width: `${clearPercentage}%` }} />
+                  <span style={{ width: `${classIIPercentage}%` }} />
                 </div>
                 <span className="stat-muted">
                   dari {readings.length} pembacaan
@@ -1017,26 +1032,39 @@ export default function Home() {
                   </div>
                   <p>Perubahan kadar NTU dari waktu ke waktu</p>
                 </div>
-                <div className="range-switch" aria-label="Rentang waktu grafik">
-                  {(["1H", "6H", "24H", "7D"] as Range[]).map((item) => (
-                    <button
-                      key={item}
-                      onClick={() => setRange(item)}
-                      className={range === item ? "selected" : ""}
-                      aria-pressed={range === item}
-                    >
-                      {item}
-                    </button>
-                  ))}
+                <div className="chart-controls">
+                  <div className="range-switch" aria-label="Rentang waktu grafik">
+                    {(["1H", "6H", "24H", "7D"] as Range[]).map((item) => (
+                      <button
+                        key={item}
+                        onClick={() => setRange(item)}
+                        className={range === item ? "selected" : ""}
+                        aria-pressed={range === item}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className={`log-toggle ${logScale ? "selected" : ""}`}
+                    onClick={() => setLogScale((current) => !current)}
+                    aria-pressed={logScale}
+                  >
+                    Skala log
+                  </button>
                 </div>
               </div>
-              <TrendChart readings={shownReadings} range={range} />
+              <TrendChart
+                readings={shownReadings}
+                range={range}
+                logScale={logScale}
+              />
               <div className="chart-legend">
                 <span>
-                  <i className="chart-legend-line" /> Tingkat kekeruhan
+                  <i className="chart-legend-line" /> Tingkat kekeruhan (NTU)
                 </span>
                 <span>
-                  <i className="chart-legend-dash" /> Ambang jernih · 3 NTU
+                  <i className="chart-legend-dash" /> Garis putus: batas TSS PP 22/2021 (setara NTU)
                 </span>
               </div>
             </section>
@@ -1045,7 +1073,7 @@ export default function Home() {
               <div className="panel-header">
                 <div>
                   <h3>Ambang kualitas</h3>
-                  <p>Panduan tingkat kekeruhan air</p>
+                  <p>Estimasi TSS dari NTU (PP 22/2021)</p>
                 </div>
                 <button
                   className="icon-button panel-menu"
@@ -1055,48 +1083,65 @@ export default function Home() {
                 </button>
               </div>
               <div className="threshold-list">
-                <div className="threshold-item">
-                  <span className="threshold-icon threshold-clear">
-                    <Icon name="check" size={16} />
-                  </span>
-                  <div className="threshold-info">
-                    <strong>Jernih</strong>
-                    <span>Air dalam kondisi baik</span>
+                {[
+                  {
+                    status: "Kelas I" as const,
+                    description: "Air baku air minum",
+                    range: "≤ 40",
+                    icon: "check" as const,
+                  },
+                  {
+                    status: "Kelas II" as const,
+                    description: "Rekreasi air, budidaya ikan, peternakan, irigasi",
+                    range: "> 40 - 50",
+                    icon: "activity" as const,
+                  },
+                  {
+                    status: "Kelas III" as const,
+                    description: "Budidaya ikan, peternakan, irigasi",
+                    range: "> 50 - 100",
+                    icon: "activity" as const,
+                  },
+                  {
+                    status: "Kelas IV" as const,
+                    description: "Irigasi",
+                    range: "> 100 - 400",
+                    icon: "warning" as const,
+                  },
+                  {
+                    status: "Melampaui" as const,
+                    description: "Di atas batas Kelas IV",
+                    range: "> 400",
+                    icon: "warning" as const,
+                  },
+                ].map(({ status, description, range: threshold, icon }) => (
+                  <div className="threshold-item" key={status}>
+                    <span
+                      className="threshold-icon"
+                      style={{
+                        color: COLORS[status],
+                        backgroundColor: `${COLORS[status]}18`,
+                      }}
+                    >
+                      <Icon name={icon} size={16} />
+                    </span>
+                    <div className="threshold-info">
+                      <strong>{status}</strong>
+                      <span>{description}</span>
+                    </div>
+                    <span className="threshold-range">
+                      {threshold} <small>mg/L</small>
+                    </span>
                   </div>
-                  <span className="threshold-range">
-                    &lt; 3 <small>NTU</small>
-                  </span>
-                </div>
-                <div className="threshold-item">
-                  <span className="threshold-icon threshold-mid">
-                    <Icon name="activity" size={16} />
-                  </span>
-                  <div className="threshold-info">
-                    <strong>Agak keruh</strong>
-                    <span>Pantau secara berkala</span>
-                  </div>
-                  <span className="threshold-range">
-                    3 – 25 <small>NTU</small>
-                  </span>
-                </div>
-                <div className="threshold-item">
-                  <span className="threshold-icon threshold-high">
-                    <Icon name="warning" size={16} />
-                  </span>
-                  <div className="threshold-info">
-                    <strong>Keruh</strong>
-                    <span>Perlu pemeriksaan</span>
-                  </div>
-                  <span className="threshold-range">
-                    &gt; 25 <small>NTU</small>
-                  </span>
-                </div>
+                ))}
               </div>
               <p className="threshold-note">
-                Jernih mengacu pada baku mutu kekeruhan Permenkes No. 2 Tahun
-                2023 (&lt; 3 NTU). Batas 25 NTU berasal dari Permenkes No. 32
-                Tahun 2017 (sudah dicabut). Kategori &quot;Agak keruh&quot;
-                adalah klasifikasi proyek, bukan klasifikasi dari peraturan.
+                Batas mengacu pada parameter TSS pada PP No. 22 Tahun 2021
+                Lampiran VI (baku mutu air sungai). Peraturan tersebut tidak
+                menetapkan batas NTU, sehingga TSS diestimasi dari NTU dengan
+                TSS = {TSS_A} × NTU + {TSS_B} (koefisien placeholder simulasi).
+                Ini adalah indikator berdasarkan satu parameter, bukan
+                penetapan status mutu air.
               </p>
             </section>
           </div>
@@ -1104,8 +1149,8 @@ export default function Home() {
           <section className="panel history-panel" id="history">
             <div className="panel-header history-header">
               <div>
-                <h3>Riwayat pembacaan</h3>
-                <p>Data sensor terbaru yang tercatat</p>
+                <h3>Riwayat pemantauan</h3>
+                <p>Pembacaan sensor terbaru di titik pantau sungai</p>
               </div>
               <button className="text-button" onClick={exportCsv}>
                 Unduh semua <Icon name="arrow" size={14} />
@@ -1117,10 +1162,10 @@ export default function Home() {
                   <tr>
                     <th>WAKTU</th>
                     <th>TINGKAT NTU</th>
+                    <th>TSS EST.</th>
                     <th>ADC RAW</th>
                     <th>TEGANGAN</th>
-                    <th>STATUS AIR</th>
-                    <th />
+                    <th>KELAS</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1136,6 +1181,9 @@ export default function Home() {
                           {reading.ntu.toFixed(1)} <small>NTU</small>
                         </strong>
                       </td>
+                      <td className="table-secondary">
+                        {reading.tss.toFixed(1)} mg/L
+                      </td>
                       <td className="table-secondary">{reading.adc_raw}</td>
                       <td className="table-secondary">
                         {reading.voltage.toFixed(3)} V
@@ -1144,23 +1192,13 @@ export default function Home() {
                         <span
                           className="table-status"
                           style={{
-                            color:
-                              COLORS[reading.status] ??
-                              COLORS[getStatus(reading.ntu)],
-                            background: `${COLORS[reading.status] ?? COLORS[getStatus(reading.ntu)]}16`,
+                            color: COLORS[reading.status],
+                            background: `${COLORS[reading.status]}16`,
                           }}
                         >
                           <i />
                           {reading.status}
                         </span>
-                      </td>
-                      <td>
-                        <button
-                          className="row-menu"
-                          aria-label={`Opsi pembacaan ${formatTime(reading.created_at)}`}
-                        >
-                          ···
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1185,7 +1223,7 @@ export default function Home() {
 
           <footer className="footer">
             <span>
-              © 2026 Toren Guard <i /> Sistem Pemantauan Kualitas Air Toren
+              © 2026 River Guard <i /> Sistem Pemantauan Kekeruhan Sungai
             </span>
             <span>Dibuat untuk memenuhi tugas mata kuliah</span>
           </footer>
