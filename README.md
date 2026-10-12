@@ -144,8 +144,190 @@ Konfigurasi utama:
 | `V_CLEAR`, `SLOPE`, `DIV_RATIO` | Konversi tegangan ke NTU | model linear Cirkit, kalibrasi ulang untuk sensor asli |
 | `NTU_MAX` | Batas atas NTU | 3000 |
 | `TSS_A`, `TSS_B` | Koefisien estimasi TSS | **placeholder 1,0 dan 0,0** (hanya untuk simulasi) |
+| `DEBUG_PAYLOAD`, `DEBUG_ERROR` | Cetak JSON yang dikirim dan isi error dari Supabase di Serial Monitor | `true` (matikan di lapangan) |
 
 > **Keamanan.** Jangan commit `SUPABASE_KEY` asli ke repositori publik. Jika sempat terpublikasi, rotate di dashboard Supabase.
+
+<details>
+<summary><b>Kode lengkap firmware (klik untuk membuka)</b></summary>
+
+```cpp
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
+
+// ================= KONFIGURASI =================
+const char* WIFI_SSID     = "CirkitWifi";
+const char* WIFI_PASSWORD = "";
+const char* SUPABASE_URL  = "https://<project-ref>.supabase.co";   // isi URL project Supabase kamu
+const char* SUPABASE_KEY  = "<publishable key>";                   // isi publishable key kamu
+const char* DEVICE_ID     = "sungai-01";
+const int   TURBIDITY_PIN = 1;   // ESP32 klasik: ganti ke GPIO34/35
+
+const unsigned long INTERVAL_MS   = 3000;   // jeda antar kirim (heartbeat)
+const unsigned long WIFI_RETRY_MS = 10000;  // jeda antar percobaan reconnect
+const uint16_t      HTTP_TIMEOUT  = 2500;   // ms, supaya kirim gagal tidak menahan lama
+const int           ADC_SAMPLES   = 16;     // jumlah sampel rata-rata
+
+// ===== MODEL SENSOR SEN0189 (catu 5 V) =====
+// V_sensor = V_CLEAR + SLOPE * NTU
+// Sumber: J. Phys.: Conf. Ser. 1280 (2019) 022064, doi:10.1088/1742-6596/1280/2/022064
+const float V_CLEAR   = 3.9994;
+const float SLOPE     = -0.0008;    // V per NTU
+const float DIV_RATIO = 0.6;        // V_adc = V_sensor x DIV_RATIO (samakan dengan rangkaian)
+const float ADC_VREF  = 3.3;
+const float NTU_MAX   = 3000.0;     // batas atas slider Cirkit
+
+// ===== ESTIMASI TSS =====
+// TSS (mg/L) = TSS_A * NTU + TSS_B
+// Nilai 1.0 dan 0.0 hanya asumsi untuk simulasi (TSS estimasi = NTU).
+const float TSS_A = 1.0;
+const float TSS_B = 0.0;
+
+// ===== AMBANG TSS (mg/L) =====
+// Baku mutu air sungai, PP No. 22 Tahun 2021 Lampiran VI (parameter TSS)
+const float TSS_KELAS_1 = 40.0;
+const float TSS_KELAS_2 = 50.0;
+const float TSS_KELAS_3 = 100.0;
+const float TSS_KELAS_4 = 400.0;
+
+// ===== DEBUG =====
+const bool DEBUG_PAYLOAD = true;    // cetak JSON yang dikirim
+const bool DEBUG_ERROR   = true;    // cetak isi respons error dari Supabase
+
+// ================= GLOBAL =================
+WiFiClientSecure client;   // dipakai ulang agar tidak handshake TLS tiap kirim
+HTTPClient http;
+const String ENDPOINT = String(SUPABASE_URL) + "/rest/v1/readings";
+unsigned long lastSend = 0;
+unsigned long lastWiFiAttempt = 0;
+
+// ================= FUNGSI =================
+float toNTU(float vAdc) {
+  float vSensor = vAdc / DIV_RATIO;
+  float ntu = (vSensor - V_CLEAR) / SLOPE;
+  return constrain(ntu, 0.0, NTU_MAX);
+}
+
+float toTSS(float ntu) {
+  float tss = TSS_A * ntu + TSS_B;
+  return tss < 0.0 ? 0.0 : tss;
+}
+
+String classify(float tss) {
+  if (tss <= TSS_KELAS_1) return "Kelas I";
+  if (tss <= TSS_KELAS_2) return "Kelas II";
+  if (tss <= TSS_KELAS_3) return "Kelas III";
+  if (tss <= TSS_KELAS_4) return "Kelas IV";
+  return "Melampaui";
+}
+
+float readAveraged() {
+  long sum = 0;
+  for (int i = 0; i < ADC_SAMPLES; i++) {
+    sum += analogRead(TURBIDITY_PIN);
+    delay(1);
+  }
+  return sum / (float)ADC_SAMPLES;
+}
+
+// Tidak memblokir: hanya memicu reconnect tiap WIFI_RETRY_MS
+void maintainWiFi() {
+  if (WiFi.status() == WL_CONNECTED) return;
+  unsigned long now = millis();
+  if (now - lastWiFiAttempt >= WIFI_RETRY_MS) {
+    lastWiFiAttempt = now;
+    WiFi.disconnect();
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    Serial.println("Wi-Fi reconnect started");
+  }
+}
+
+void sendReading(float adc) {
+  float vAdc = adc / 4095.0 * ADC_VREF;
+  float ntu = toNTU(vAdc);
+  float tss = toTSS(ntu);
+  String status = classify(tss);
+
+  unsigned long t0 = millis();
+
+  if (!http.begin(client, ENDPOINT)) {
+    Serial.println("Could not start HTTP request");
+    client.stop();
+    return;
+  }
+
+  // Key format baru (sb_publishable_...) bukan JWT, jadi cukup header "apikey".
+  // Header Authorization: Bearer sengaja tidak dipakai.
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("apikey", SUPABASE_KEY);
+  http.addHeader("Prefer", "return=minimal");
+
+  String body = "{\"device_id\":\"" + String(DEVICE_ID) + "\",\"adc_raw\":" + String((int)round(adc)) +
+                ",\"voltage\":" + String(vAdc, 4) + ",\"ntu\":" + String(ntu, 1) +
+                ",\"tss_est\":" + String(tss, 1) +
+                ",\"status\":\"" + status + "\"}";
+
+  if (DEBUG_PAYLOAD) {
+    Serial.print("Payload: ");
+    Serial.println(body);
+  }
+
+  int code = http.POST(body);
+
+  // Jika gagal (kode negatif), tutup koneksi agar percobaan berikutnya mulai bersih
+  if (code <= 0) client.stop();
+
+  Serial.printf("ADC=%.1f V=%.4f NTU=%.1f TSS=%.1f %s -> HTTP %d (%lu ms)\n",
+                adc, vAdc, ntu, tss, status.c_str(), code, millis() - t0);
+
+  // Tampilkan alasan penolakan dari Supabase (JSON: code, message, details, hint)
+  if (DEBUG_ERROR && code >= 400) {
+    Serial.print("Error body: ");
+    Serial.println(http.getString());
+    client.stop();   // setelah error, mulai koneksi baru agar tidak terbawa state lama
+  }
+
+  http.end();  // dengan setReuse(true), koneksi tetap terbuka untuk kiriman berikutnya
+}
+
+void setup() {
+  Serial.begin(9600);
+
+  client.setInsecure();                 // cukup untuk simulasi/tugas
+  http.setReuse(true);                  // keep-alive
+  http.setConnectTimeout(HTTP_TIMEOUT);
+  http.setTimeout(HTTP_TIMEOUT);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);                 // kurangi latensi di hardware asli
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  lastWiFiAttempt = millis();
+
+  // Tunggu maksimal 10 detik, tidak menggantung selamanya
+  Serial.print("Connecting to WiFi");
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+    delay(200);
+    Serial.print(".");
+  }
+  Serial.println(WiFi.status() == WL_CONNECTED ? " Connected!" : " (belum terhubung, lanjut retry)");
+
+  lastSend = millis() - INTERVAL_MS;    // kirim pertama langsung
+}
+
+void loop() {
+  maintainWiFi();
+
+  unsigned long now = millis();
+  if (WiFi.status() == WL_CONNECTED && now - lastSend >= INTERVAL_MS) {
+    lastSend = now;
+    sendReading(readAveraged());
+  }
+}
+```
+
+</details>
 
 Format data yang dikirim:
 
