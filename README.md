@@ -19,9 +19,7 @@ Sistem pemantauan kekeruhan **air sungai** berbasis IoT. Sensor turbidity **DFRo
 
 ## Arsitektur
 
-![Arsitektur River Guard](docs/arsitektur.svg)
-
-*Versi PNG untuk laporan atau slide: [docs/arsitektur.png](docs/arsitektur.png).*
+![Arsitektur River Guard](C:\Users\bbros\Downloads\turbidity_twin\mytoren\public\arsitektur.svg)
 
 Alur singkat:
 
