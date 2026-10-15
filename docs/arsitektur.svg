@@ -1,80 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1110 400" width="1110" height="400" font-family="Arial, Helvetica, DejaVu Sans, sans-serif" xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTo0MTllMjZiYy01NWRhLTRhMmYtYjc4OS05ZmY2ZjM4MzRlZjIAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaD2ZE8bDrHxfjkgFSAwhA+gAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDpjMjI3MDQ5My0wYTFkLTQ4N2ItYWE0OS1mYWJjZTVmYzAxNGNscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNorfzcLSP7NslYVmxSqHwPnwAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggZcXdN5WmJkWv39je8OU7yGE7gQF2IOcAUukYTj+J9gikZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaPz7L/ISxCFVc20oNKRl/MYAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRNAAAAAAAAAAAAAAAAAGRoYXNoWCCy6CVQl9/6lj4le8xEAkMLoLZ2OwqrNAgVjmWNdhT0DGRuYW1lbmp1bWJmIG1hbmlmZXN0amV4Y2x1c2lvbnOBomVzdGFydBjQZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOjQxOWUyNmJjLTU1ZGEtNGEyZi1iNzg5LTlmZjZmMzgzNGVmMi9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjMyNTZlNGFhLTQyYTMtNDM3Ni1hNTZlLTZmMjY1MzZjZjhkZHJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCBlxd03laYmRa/f2N7w5TvIYTuBAXYg5wBS6RhOP4n2CKJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgg6Rq6AVAuzMKVykpqMnySpMcktzPRCeBtr00p3BAq8ESiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggBUv5TuR3cLQ/31IRV9sR2rCnN9gvNfpw9fY4OMahSX10Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQO+qZfzSNec1uRgU4vgfTsW7Dz50/V8NB1uSiYWCizK4hQ3c0VAUo33+k3eMMUgIwpzfNB/3AHUkh3IIKpz+wNU=</c2pa:manifest></metadata>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 360" width="1080" height="360" role="img" aria-labelledby="title description">
+  <title id="title">Arsitektur River Guard</title>
+  <desc id="description">Sensor sungai mengirim pembacaan NTU ke Supabase dan dashboard.</desc>
   <defs>
-    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#475569"/>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 10 5 0 10z" fill="#53716b"/>
     </marker>
-    <marker id="arrd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8"/>
-    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; }
+      .title { fill: #173b38; font-size: 23px; font-weight: 700; }
+      .heading { fill: #234743; font-size: 16px; font-weight: 700; }
+      .body { fill: #607a74; font-size: 12px; }
+      .card { fill: #fff; stroke: #dce9e5; stroke-width: 1.5; }
+    </style>
   </defs>
-
-  <rect width="1110" height="400" fill="#ffffff"/>
-  <text x="555" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">Arsitektur River Guard: Pemantauan Kekeruhan Sungai</text>
-
-  <!-- Node 1: Sungai + sensor -->
-  <rect x="20" y="70" width="200" height="120" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
-  <path d="M40 98 q15 -9 30 0 t30 0 t30 0 t30 0 t30 0" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
-  <text x="120" y="126" text-anchor="middle" font-size="16" font-weight="700" fill="#0c4a6e">Sungai + Sensor</text>
-  <text x="120" y="148" text-anchor="middle" font-size="13" fill="#0c4a6e">SEN0189 (probe terendam)</text>
-  <text x="120" y="167" text-anchor="middle" font-size="13" fill="#0c4a6e">+ pembagi tegangan</text>
-
-  <!-- Node 2: ESP32 -->
-  <rect x="320" y="70" width="190" height="120" rx="12" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
-  <text x="415" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#14532d">ESP32</text>
-  <text x="415" y="124" text-anchor="middle" font-size="13" fill="#14532d">Median sampel ADC</text>
-  <text x="415" y="143" text-anchor="middle" font-size="13" fill="#14532d">Validasi rentang</text>
-  <text x="415" y="162" text-anchor="middle" font-size="13" fill="#14532d">Konversi tegangan → NTU</text>
-
-  <!-- Node 3: Supabase -->
-  <rect x="610" y="70" width="200" height="120" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
-  <text x="710" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#3b0764">Supabase</text>
-  <text x="710" y="124" text-anchor="middle" font-size="13" fill="#3b0764">Postgres, tabel readings</text>
-  <text x="710" y="143" text-anchor="middle" font-size="13" fill="#3b0764">REST API + RLS</text>
-  <text x="710" y="162" text-anchor="middle" font-size="13" fill="#3b0764">(ntu, tegangan, tss_est)</text>
-
-  <!-- Node 4: Dashboard -->
-  <rect x="910" y="70" width="180" height="120" rx="12" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
-  <text x="1000" y="100" text-anchor="middle" font-size="16" font-weight="700" fill="#7c2d12">Dashboard Web</text>
-  <text x="1000" y="124" text-anchor="middle" font-size="13" fill="#7c2d12">Estimasi TSS (a·NTU + b)</text>
-  <text x="1000" y="143" text-anchor="middle" font-size="13" fill="#7c2d12">Indikator PP 22/2021</text>
-  <text x="1000" y="162" text-anchor="middle" font-size="13" fill="#7c2d12">Deteksi kenaikan mendadak</text>
-
-  <!-- Arrows + labels -->
-  <line x1="226" y1="130" x2="314" y2="130" stroke="#475569" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="270" y="112" text-anchor="middle" font-size="12" fill="#334155">sinyal</text>
-  <text x="270" y="154" text-anchor="middle" font-size="12" fill="#334155">analog</text>
-
-  <line x1="516" y1="130" x2="604" y2="130" stroke="#475569" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="560" y="112" text-anchor="middle" font-size="12" fill="#334155">HTTPS POST</text>
-  <text x="560" y="154" text-anchor="middle" font-size="12" fill="#334155">tiap 3-60 dtk</text>
-
-  <line x1="904" y1="130" x2="816" y2="130" stroke="#475569" stroke-width="2.5" marker-end="url(#arr)"/>
-  <text x="860" y="112" text-anchor="middle" font-size="12" fill="#334155">REST GET</text>
-  <text x="860" y="154" text-anchor="middle" font-size="12" fill="#334155">polling</text>
-
-  <!-- Optional modules (dashed) -->
-  <rect x="300" y="222" width="230" height="46" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="415" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">Opsional di lapangan</text>
-  <text x="415" y="259" text-anchor="middle" font-size="12" fill="#475569">suhu · level air · panel surya · GSM</text>
-  <line x1="415" y1="220" x2="415" y2="194" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrd)"/>
-
-  <rect x="860" y="222" width="230" height="46" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="975" y="242" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">Kalibrasi lokasi</text>
-  <text x="975" y="259" text-anchor="middle" font-size="12" fill="#475569">sampel + uji TSS lab → a, b</text>
-  <line x1="1000" y1="220" x2="1000" y2="194" stroke="#94a3b8" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrd)"/>
-
-  <!-- Legend -->
-  <text x="20" y="300" font-size="13" font-weight="700" fill="#0f172a">Indikator TSS estimasi (baku mutu air sungai, PP 22/2021 Lampiran VI)</text>
-  <rect x="20"  y="312" width="200" height="32" rx="16" fill="#d1fae5" stroke="#10b981"/>
-  <text x="120" y="333" text-anchor="middle" font-size="13" fill="#065f46">Kelas I: ≤ 40 mg/L</text>
-  <rect x="232" y="312" width="200" height="32" rx="16" fill="#ecfccb" stroke="#84cc16"/>
-  <text x="332" y="333" text-anchor="middle" font-size="13" fill="#365314">Kelas II: ≤ 50 mg/L</text>
-  <rect x="444" y="312" width="200" height="32" rx="16" fill="#fef3c7" stroke="#f59e0b"/>
-  <text x="544" y="333" text-anchor="middle" font-size="13" fill="#78350f">Kelas III: ≤ 100 mg/L</text>
-  <rect x="656" y="312" width="200" height="32" rx="16" fill="#ffedd5" stroke="#f97316"/>
-  <text x="756" y="333" text-anchor="middle" font-size="13" fill="#7c2d12">Kelas IV: ≤ 400 mg/L</text>
-  <rect x="868" y="312" width="222" height="32" rx="16" fill="#fee2e2" stroke="#ef4444"/>
-  <text x="979" y="333" text-anchor="middle" font-size="13" fill="#7f1d1d">Melampaui: &gt; 400 mg/L</text>
-
-  <text x="20" y="378" font-size="12" fill="#475569">Estimasi indikatif dari sensor kekeruhan. Bukan penetapan status mutu air resmi (perlu uji laboratorium dan parameter lengkap).</text>
+  <rect width="1080" height="360" rx="20" fill="#f3f8f6"/>
+  <text x="48" y="48" class="title">Arsitektur River Guard · Pemantauan NTU</text>
+  <rect x="48" y="92" width="260" height="160" rx="14" class="card"/>
+  <text x="76" y="128" class="heading">Stasiun sungai</text>
+  <text x="76" y="158" class="body">DFRobot SEN0189</text>
+  <text x="76" y="180" class="body">ESP32-S3 · ADC 12-bit</text>
+  <text x="76" y="202" class="body">NTU · tegangan · ADC</text>
+  <path d="M308 172h74" stroke="#53716b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="320" y="154" class="body">HTTPS</text>
+  <rect x="390" y="92" width="292" height="160" rx="14" class="card"/>
+  <text x="418" y="128" class="heading">Supabase</text>
+  <text x="418" y="158" class="body">public.readings</text>
+  <text x="418" y="180" class="body">id · created_at · device_id</text>
+  <text x="418" y="202" class="body">adc_raw · voltage · ntu · status</text>
+  <path d="M682 172h74" stroke="#53716b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="696" y="154" class="body">REST · polling</text>
+  <rect x="764" y="92" width="268" height="160" rx="14" class="card"/>
+  <text x="792" y="128" class="heading">Dashboard web</text>
+  <text x="792" y="158" class="body">Grafik · kartu · riwayat</text>
+  <text x="792" y="180" class="body">Status dihitung dari NTU</text>
+  <text x="792" y="202" class="body">Jernih · Agak Keruh</text>
+  <text x="792" y="224" class="body">Keruh · Sangat Keruh</text>
+  <rect x="48" y="278" width="984" height="44" rx="10" fill="#e7f2ee"/>
+  <text x="72" y="305" class="body">Ambang klasifikasi tunggal: 10 · 40 · 100 NTU  |  Pembaruan dashboard berkala tanpa koneksi realtime</text>
 </svg>

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "River Guard | Pemantauan Kualitas Sungai",
   description:
-    "Pantau tingkat kekeruhan sungai melalui estimasi TSS secara real-time.",
+    "Pantau tingkat kekeruhan air sungai dalam satuan NTU.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
